@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure AD Refresh Token Utility</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .app-selection {
+            margin-bottom: 25px;
+        }
+
+        .app-option {
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .app-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .app-option.selected {
+            border-color: #667eea;
+            background: #e8f0ff;
+        }
+
+        .app-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .app-id {
+            font-family: monospace;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-result {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .search-result:hover {
+            background: #f8f9fa;
+        }
+
+        .search-result:last-child {
+            border-bottom: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .token-display {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .custom-client {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #e1e5e9;
+        }
+
+        .tab-container {
+            margin-bottom: 25px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 2px solid #e1e5e9;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Azure AD Refresh Token Utility</h1>
+            <p>Exchange your refresh token for a new access token with any client ID</p>
+        </div>
+
+        <div class="content">
+            <form id="tokenForm">
+                <!-- Refresh Token Input -->
+                <div class="form-group">
+                    <label for="refreshToken">Refresh Token:</label>
+                    <textarea id="refreshToken" name="refreshToken" placeholder="Enter your refresh token here..." required></textarea>
+                </div>
+
+                <!-- Application Selection Tabs -->
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button type="button" class="tab-button active" onclick="showTab('top-apps')">Top Apps</button>
+                        <button type="button" class="tab-button" onclick="showTab('search')">Search Apps</button>
+                        <button type="button" class="tab-button" onclick="showTab('custom')">Custom Client ID</button>
+                    </div>
+
+                    <!-- Top Apps Tab -->
+                    <div id="top-apps" class="tab-content active">
+                        <div class="app-selection">
+                            <h3>Select from Top Microsoft Applications:</h3>
+                            {% for app in top_apps %}
+                            <div class="app-option" onclick="selectApp('{{ app.client_id }}', '{{ app.name }}', '{{ app.scope }}')">
+                                <div class="app-name">{{ app.name }}</div>
+                                <div class="app-id">{{ app.client_id }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Search Apps Tab -->
+                    <div id="search" class="tab-content">
+                        <div class="search-container">
+                            <label for="searchInput">Search Applications:</label>
+                            <input type="text" id="searchInput" placeholder="Type to search applications...">
+                            <div id="searchResults" class="search-results"></div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Client ID Tab -->
+                    <div id="custom" class="tab-content">
+                        <div class="custom-client">
+                            <div class="form-group">
+                                <label for="customClientId">Custom Client ID:</label>
+                                <input type="text" id="customClientId" placeholder="Enter custom client ID">
+                            </div>
+                            <div class="form-group">
+                                <label for="customScope">Scope (optional):</label>
+                                <input type="text" id="customScope" placeholder="https://graph.microsoft.com/.default offline_access openid" value="https://graph.microsoft.com/.default offline_access openid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected App Display -->
+                <div id="selectedApp" class="form-group" style="display: none;">
+                    <label>Selected Application:</label>
+                    <div class="token-display" id="selectedAppInfo"></div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn" id="submitBtn">Exchange Token</button>
+            </form>
+
+            <!-- Loading Indicator -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Exchanging token...</p>
+            </div>
+
+            <!-- Results -->
+            <div id="result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedClientId = '';
+        let selectedAppName = '';
+        let selectedScope = '';
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        function selectApp(clientId, appName, scope) {
+            selectedClientId = clientId;
+            selectedAppName = appName;
+            selectedScope = scope;
+
+            // Update selected app display
+            document.getElementById('selectedApp').style.display = 'block';
+            document.getElementById('selectedAppInfo').textContent = `${appName}\nClient ID: ${clientId}\nScope: ${scope}`;
+
+            // Remove selection from all app options
+            document.querySelectorAll('.app-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+
+            // Add selection to clicked option
+            event.currentTarget.classList.add('selected');
+        }
+
+        // Search functionality
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetch(`/search_apps?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultsDiv = document.getElementById('searchResults');
+                        resultsDiv.innerHTML = '';
+                        
+                        if (data.length === 0) {
+                            resultsDiv.innerHTML = '<div class="search-result">No applications found</div>';
+                        } else {
+                            data.forEach(app => {
+                                const div = document.createElement('div');
+                                div.className = 'search-result';
+                                div.innerHTML = `
+                                    <div class="app-name">${app.name}</div>
+                                    <div class="app-id">${app.client_id}</div>
+                                `;
+                                div.onclick = () => {
+                                    selectApp(app.client_id, app.name, app.scope);
+                                    document.getElementById('searchInput').value = app.name;
+                                    document.getElementById('searchResults').style.display = 'none';
+                                };
+                                resultsDiv.appendChild(div);
+                            });
+                        }
+                        
+                        resultsDiv.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                    });
+            }, 300);
+        });
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('searchResults').style.display = 'none';
+            }
+        });
+
+        // Form submission
+        document.getElementById('tokenForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const refreshToken = document.getElementById('refreshToken').value.trim();
+            let clientId = selectedClientId;
+            let scope = selectedScope;
+
+            // Check if custom client ID is being used
+            if (document.getElementById('custom').classList.contains('active')) {
+                clientId = document.getElementById('customClientId').value.trim();
+                scope = document.getElementById('customScope').value.trim();
+                
+                if (!clientId) {
+                    showResult('Please enter a custom client ID', 'error');
+                    return;
+                }
+            }
+
+            if (!refreshToken) {
+                showResult('Please enter a refresh token', 'error');
+                return;
+            }
+
+            if (!clientId) {
+                showResult('Please select an application or enter a custom client ID', 'error');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('result').style.display = 'none';
+
+            // Make API call
+            fetch('/exchange_token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    refresh_token: refreshToken,
+                    client_id: clientId,
+                    scope: scope
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+
+                if (data.success) {
+                    showResult('Token exchange successful!', 'success', data.token_data);
+                } else {
+                    showResult(data.error || 'Token exchange failed', 'error');
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                showResult('Network error: ' + error.message, 'error');
+            });
+        });
+
+        function showResult(message, type, tokenData = null) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            
+            let content = `<h3>${message}</h3>`;
+            
+            if (tokenData && type === 'success') {
+                content += `
+                    <div class="token-display">
+                        <strong>Access Token:</strong>
+                        ${tokenData.access_token || '<none>'}
+
+                        ${tokenData.refresh_token ? `
+                        <strong>New Refresh Token:</strong>
+                        ${tokenData.refresh_token}
+                        ` : ''}
+
+                        ${tokenData.id_token ? `
+                        <strong>ID Token:</strong>
+                        ${tokenData.id_token}
+                        ` : ''}
+
+                        ${tokenData.expires_in ? `
+                        <strong>Expires in:</strong> ${tokenData.expires_in} seconds
+                        ` : ''}
+
+                        ${tokenData.token_type ? `
+                        <strong>Token Type:</strong> ${tokenData.token_type}
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            resultDiv.innerHTML = content;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 
