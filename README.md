@@ -7,11 +7,13 @@ A standalone utility that allows you to use a refresh token to create a new acce
 ## Features
 ### CLI Interface
 - Interactive command-line tool with colored output
-<img width="616" height="865" alt="image" src="https://github.com/user-attachments/assets/66bae2dc-be65-4786-bda6-a6beca9d14d1" />
+<img width="616" height="865" alt="CLI" src="https://github.com/user-attachments/assets/ab3871c2-e23d-4f60-8ca5-36e0cd3fe7f8" />
+
 
 ### Web Interface
 - Modern, responsive web application
-<img width="817" height="907" alt="image" src="https://github.com/user-attachments/assets/faa532c7-4d93-4814-b4ab-ff880b1c79a4" />
+<img width="817" height="907" alt="Web" src="https://github.com/user-attachments/assets/125f78f8-cdbc-49f4-b243-b0b7566c41e9" />
+
 
 - **Multiple Client Selection**: Choose from top Microsoft applications, search all apps, or use custom client IDs
 - **Refresh Token Exchange**: Exchange refresh tokens for new access tokens using the OAuth 2.0 refresh token flow
@@ -159,6 +161,7 @@ This tool is designed for legitimate use cases such as:
 
 
 Please ensure you have proper authorization before using this tool with any tokens or client IDs. 
+
 
 
 
