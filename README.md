@@ -5,6 +5,7 @@ A standalone utility that allows you to use a refresh token to create a new acce
 --> This tool provides both CLI and web interfaces for easy token exchange. <--
 
 Learn more right here:
+
 [![Two Devices Walk Into Azure...One's a Phish](https://img.youtube.com/vi/vzJ2hdf8FR4/0.jpg)](https://www.youtube.com/watch?v=vzJ2hdf8FR4)
 
 ## Features
@@ -164,3 +165,4 @@ This tool is designed for legitimate use cases such as:
 
 
 Please ensure you have proper authorization before using this tool with any tokens or client IDs. 
+
